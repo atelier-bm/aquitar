@@ -1,0 +1,39 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - unconvert
+    - bodyclose
+    - noctx
+    - gosec
+    - prealloc
+
+linters-settings:
+  gosec:
+    excludes:
+      - G304  # File path provided as taint input (config files are expected)
+  
+  misspell:
+    locale: US
+
+issues:
+  exclude-rules:
+    # Test files can have longer functions and more complexity
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck

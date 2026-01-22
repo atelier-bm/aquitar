@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Documentation (not needed in image)
+docs/
+*.md
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test files (not needed in production image)
+*_test.go
+testdata/
+
+# Local development files
+.env
+.env.*
+*.wip
+
+# Docker files (avoid recursive copies)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
