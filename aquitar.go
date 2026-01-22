@@ -6,7 +6,6 @@ package aquitar
 
 import (
 	"context"
-	"errors"
 	"net"
 )
 
@@ -29,6 +28,5 @@ type Config struct {
 // The context controls the connection lifetime. If the context is cancelled,
 // the listener will be closed.
 func Listen(ctx context.Context, cfg Config) (net.Listener, error) {
-	// TODO: Implement
-	return nil, errors.New("not implemented")
+	return connect(ctx, cfg)
 }

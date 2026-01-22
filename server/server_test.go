@@ -231,8 +231,6 @@ func (s *testServer) handleConn(conn net.Conn) {
 }
 
 func TestIntegration_ClientServerEcho(t *testing.T) {
-	t.Skip("not implemented: full integration requires real Server implementation")
-
 	// This test demonstrates the full flow:
 	// 1. Server listens on control port
 	// 2. Client connects and registers port 9001
@@ -291,8 +289,6 @@ func TestIntegration_ClientServerEcho(t *testing.T) {
 }
 
 func TestIntegration_InvalidPSK(t *testing.T) {
-	t.Skip("not implemented: full integration requires real Server implementation")
-
 	srv := newTestServer(t, "correct-secret", nil)
 	go srv.Serve()
 
@@ -338,8 +334,6 @@ func TestIntegration_InvalidPSK(t *testing.T) {
 }
 
 func TestIntegration_PortInUse(t *testing.T) {
-	t.Skip("not implemented: full integration requires real Server implementation")
-
 	srv := newTestServer(t, "secret", nil)
 	go srv.Serve()
 
@@ -390,8 +384,6 @@ func TestIntegration_PortInUse(t *testing.T) {
 }
 
 func TestIntegration_DisallowedPort(t *testing.T) {
-	t.Skip("not implemented: full integration requires real Server implementation")
-
 	srv := newTestServer(t, "secret", []int{8443, 443})
 	go srv.Serve()
 
@@ -434,8 +426,6 @@ func TestIntegration_DisallowedPort(t *testing.T) {
 }
 
 func TestIntegration_ClientDisconnect(t *testing.T) {
-	t.Skip("not implemented: full integration requires real Server implementation")
-
 	// When client disconnects, the public port listener should close immediately
 	srv := newTestServer(t, "secret", nil)
 	go srv.Serve()

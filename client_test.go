@@ -111,8 +111,6 @@ func (ms *mockServer) ServeOne(t *testing.T) {
 }
 
 func TestListen_Success(t *testing.T) {
-	t.Skip("not implemented: Listen function does not exist yet")
-
 	ms := newMockServer(t, "secret", RegisterResponse{OK: true})
 	go ms.ServeOne(t)
 
@@ -142,8 +140,6 @@ func TestListen_Success(t *testing.T) {
 }
 
 func TestListen_InvalidPSK(t *testing.T) {
-	t.Skip("not implemented: Listen function does not exist yet")
-
 	tests := []struct {
 		name      string
 		serverPSK string
@@ -190,8 +186,6 @@ func TestListen_InvalidPSK(t *testing.T) {
 }
 
 func TestListen_PortErrors(t *testing.T) {
-	t.Skip("not implemented: Listen function does not exist yet")
-
 	tests := []struct {
 		name     string
 		port     int
@@ -244,8 +238,6 @@ func TestListen_PortErrors(t *testing.T) {
 }
 
 func TestListen_ContextCancellation(t *testing.T) {
-	t.Skip("not implemented: Listen function does not exist yet")
-
 	tests := []struct {
 		name        string
 		setupCtx    func() (context.Context, context.CancelFunc)
@@ -296,8 +288,6 @@ func TestListen_ContextCancellation(t *testing.T) {
 }
 
 func TestListen_ConnectionFailure(t *testing.T) {
-	t.Skip("not implemented: Listen function does not exist yet")
-
 	tests := []struct {
 		name    string
 		server  string
@@ -339,8 +329,6 @@ func TestListen_ConnectionFailure(t *testing.T) {
 }
 
 func TestListen_AcceptConnections(t *testing.T) {
-	t.Skip("not implemented: Listen function does not exist yet")
-
 	ms := newMockServer(t, "secret", RegisterResponse{OK: true})
 
 	// Start mock server in background
@@ -381,8 +369,6 @@ func TestListen_AcceptConnections(t *testing.T) {
 }
 
 func TestConfig_Validation(t *testing.T) {
-	t.Skip("not implemented: Listen function does not exist yet")
-
 	tests := []struct {
 		name    string
 		config  Config
@@ -461,8 +447,6 @@ func TestConfig_Validation(t *testing.T) {
 
 // TestListenerInterface verifies the returned listener satisfies net.Listener.
 func TestListenerInterface(t *testing.T) {
-	t.Skip("not implemented: Listen function does not exist yet")
-
 	ms := newMockServer(t, "secret", RegisterResponse{OK: true})
 	go ms.ServeOne(t)
 
