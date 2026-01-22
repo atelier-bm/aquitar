@@ -243,7 +243,7 @@ func TestProxy_ErrorHandling(t *testing.T) {
 }
 
 func TestSession_HandleConnection(t *testing.T) {
-	t.Skip("not implemented: Session type does not exist yet")
+	t.Skip("not implemented: Session.HandleConnection method does not exist - Session only stores yamux session without accept loop")
 
 	tests := []struct {
 		name       string
@@ -269,51 +269,90 @@ func TestSession_HandleConnection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Test will be implemented when Session type exists
+			// Test will be implemented when Session.HandleConnection exists
 			_ = tt
 		})
 	}
 }
 
 func TestSession_ConcurrentConnections(t *testing.T) {
-	t.Skip("not implemented: Session type does not exist yet")
+	t.Skip("not implemented: Session.HandleConnection method does not exist - cannot test concurrent connection handling")
 
 	// Test that multiple connections can be proxied simultaneously
 	numConns := 10
 
-	_ = numConns // Will be used when Session is implemented
+	_ = numConns // Will be used when Session.HandleConnection is implemented
 }
 
 func TestSession_Close(t *testing.T) {
-	t.Skip("not implemented: Session type does not exist yet")
+	t.Run("close with no active connections", func(t *testing.T) {
+		t.Parallel()
 
-	tests := []struct {
-		name          string
-		activeConns   int
-		expectCleanup bool
-	}{
-		{
-			name:          "close with no active connections",
-			activeConns:   0,
-			expectCleanup: true,
-		},
-		{
-			name:          "close with active connections",
-			activeConns:   5,
-			expectCleanup: true,
-		},
-	}
+		// Create a session with nil yamux (simulating no connection)
+		session := NewSession(nil, 8080)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Test will be implemented when Session type exists
-			_ = tt
-		})
-	}
+		// Close should not panic and should be idempotent
+		err := session.Close()
+		if err != nil {
+			t.Errorf("Close() error = %v, want nil", err)
+		}
+
+		// Second close should also succeed (idempotent)
+		err = session.Close()
+		if err != nil {
+			t.Errorf("second Close() error = %v, want nil", err)
+		}
+	})
+
+	t.Run("close is idempotent", func(t *testing.T) {
+		t.Parallel()
+
+		session := NewSession(nil, 9090)
+
+		// Close multiple times concurrently
+		var wg sync.WaitGroup
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				session.Close()
+			}()
+		}
+
+		done := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			// Good - all closes completed
+		case <-time.After(1 * time.Second):
+			t.Error("concurrent Close() calls did not complete")
+		}
+	})
+
+	t.Run("port returns correct value after close", func(t *testing.T) {
+		t.Parallel()
+
+		session := NewSession(nil, 12345)
+
+		if got := session.Port(); got != 12345 {
+			t.Errorf("Port() = %d, want 12345", got)
+		}
+
+		session.Close()
+
+		// Port should still return the assigned value
+		if got := session.Port(); got != 12345 {
+			t.Errorf("Port() after close = %d, want 12345", got)
+		}
+	})
 }
 
 func TestSession_Context(t *testing.T) {
-	t.Skip("not implemented: Session type does not exist yet")
+	t.Skip("not implemented: Session does not accept context - no context-aware methods exist yet")
 
 	tests := []struct {
 		name        string
@@ -338,7 +377,7 @@ func TestSession_Context(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Test will be implemented when Session type exists
+			// Test will be implemented when Session accepts context
 			_ = tt
 		})
 	}
