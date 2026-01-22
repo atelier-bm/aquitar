@@ -1,0 +1,38 @@
+# Docker Compose for local development
+# Usage: docker compose up
+#
+# Note: For production with real TLS, you need:
+# 1. A domain pointing to your server
+# 2. Ports 8443 and any client ports exposed publicly
+# 3. A persistent volume for certificate caching
+
+services:
+  aquitar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      # Control port
+      - "8443:8443"
+      # Example client ports - add as needed
+      - "9001:9001"
+      - "9002:9002"
+      - "9003:9003"
+    environment:
+      # For local development, use plain TCP (no TLS)
+      # For production, set AQUITAR_DOMAIN to your domain
+      - AQUITAR_DOMAIN=${AQUITAR_DOMAIN:-}
+      - AQUITAR_PSK=${AQUITAR_PSK:-development-psk}
+      - AQUITAR_CERT_CACHE=/data/certs
+    volumes:
+      # Persist TLS certificates across restarts
+      - cert_cache:/data/certs
+    command:
+      - "-psk=${AQUITAR_PSK:-development-psk}"
+      - "-domain=${AQUITAR_DOMAIN:-}"
+      - "-port=8443"
+    restart: unless-stopped
+    # Note: Health check is defined in Dockerfile
+
+volumes:
+  cert_cache:
