@@ -1,9 +1,7 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
-	"io"
 	"net"
 	"sync"
 	"testing"
@@ -13,26 +11,24 @@ import (
 )
 
 func TestServer_Start(t *testing.T) {
-	t.Skip("not implemented: Server type does not exist yet")
-
 	tests := []struct {
 		name    string
-		config  Config
+		config  ServerConfig
 		wantErr bool
 	}{
 		{
 			name: "valid config",
-			config: Config{
-				Domain:         "localhost",
-				PSK:            "secret",
-				ControlPort:    0, // Random port
-				DisallowedPort: []int{8443},
+			config: ServerConfig{
+				Domain:          "localhost",
+				PSK:             "secret",
+				ControlPort:     0, // Random port
+				DisallowedPorts: []int{8443},
 			},
 			wantErr: false,
 		},
 		{
 			name: "empty psk",
-			config: Config{
+			config: ServerConfig{
 				Domain:      "localhost",
 				PSK:         "",
 				ControlPort: 0,
@@ -43,15 +39,15 @@ func TestServer_Start(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Test will be implemented when Server type exists
-			_ = tt
+			_, err := New(tt.config)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
 
 func TestServer_ClientRegistration(t *testing.T) {
-	t.Skip("not implemented: Server type does not exist yet")
-
 	tests := []struct {
 		name      string
 		serverPSK string
@@ -87,29 +83,181 @@ func TestServer_ClientRegistration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Test will be implemented when Server type exists
-			_ = tt
+			srv := newTestServer(t, tt.serverPSK, []int{8443})
+			go srv.Serve()
+
+			conn, err := net.Dial("tcp", srv.Addr())
+			if err != nil {
+				t.Fatalf("dial error: %v", err)
+			}
+			defer conn.Close()
+
+			session, err := yamux.Client(conn, nil)
+			if err != nil {
+				t.Fatalf("yamux client error: %v", err)
+			}
+			defer session.Close()
+
+			stream, err := session.Open()
+			if err != nil {
+				t.Fatalf("open stream error: %v", err)
+			}
+
+			req := struct {
+				PSK  string `json:"psk"`
+				Port int    `json:"port"`
+			}{PSK: tt.clientPSK, Port: tt.port}
+			if err := json.NewEncoder(stream).Encode(req); err != nil {
+				t.Fatalf("encode request error: %v", err)
+			}
+
+			var resp struct {
+				OK    bool   `json:"ok"`
+				Error string `json:"error,omitempty"`
+			}
+			if err := json.NewDecoder(stream).Decode(&resp); err != nil {
+				t.Fatalf("decode response error: %v", err)
+			}
+
+			if resp.OK != tt.wantOK {
+				t.Errorf("OK = %v, want %v", resp.OK, tt.wantOK)
+			}
+			if tt.wantError != "" && resp.Error != tt.wantError {
+				t.Errorf("Error = %q, want %q", resp.Error, tt.wantError)
+			}
 		})
 	}
 }
 
 func TestServer_PortInUse(t *testing.T) {
-	t.Skip("not implemented: Server type does not exist yet")
-
 	// First client claims port 9001
 	// Second client requests port 9001
 	// Second client should get "port in use" error
+
+	srv := newTestServer(t, "secret", nil)
+	go srv.Serve()
+
+	// First client claims port
+	conn1, err := net.Dial("tcp", srv.Addr())
+	if err != nil {
+		t.Fatalf("dial error: %v", err)
+	}
+	defer conn1.Close()
+	session1, err := yamux.Client(conn1, nil)
+	if err != nil {
+		t.Fatalf("yamux client error: %v", err)
+	}
+	defer session1.Close()
+	stream1, err := session1.Open()
+	if err != nil {
+		t.Fatalf("open stream error: %v", err)
+	}
+
+	req := struct {
+		PSK  string `json:"psk"`
+		Port int    `json:"port"`
+	}{PSK: "secret", Port: 9001}
+	if err := json.NewEncoder(stream1).Encode(req); err != nil {
+		t.Fatalf("encode request error: %v", err)
+	}
+
+	var resp1 struct {
+		OK    bool   `json:"ok"`
+		Error string `json:"error,omitempty"`
+	}
+	if err := json.NewDecoder(stream1).Decode(&resp1); err != nil {
+		t.Fatalf("decode response error: %v", err)
+	}
+	if !resp1.OK {
+		t.Fatalf("first client should succeed: %s", resp1.Error)
+	}
+
+	// Second client tries same port
+	conn2, err := net.Dial("tcp", srv.Addr())
+	if err != nil {
+		t.Fatalf("dial error: %v", err)
+	}
+	defer conn2.Close()
+	session2, err := yamux.Client(conn2, nil)
+	if err != nil {
+		t.Fatalf("yamux client error: %v", err)
+	}
+	defer session2.Close()
+	stream2, err := session2.Open()
+	if err != nil {
+		t.Fatalf("open stream error: %v", err)
+	}
+
+	if err := json.NewEncoder(stream2).Encode(req); err != nil {
+		t.Fatalf("encode request error: %v", err)
+	}
+
+	var resp2 struct {
+		OK    bool   `json:"ok"`
+		Error string `json:"error,omitempty"`
+	}
+	if err := json.NewDecoder(stream2).Decode(&resp2); err != nil {
+		t.Fatalf("decode response error: %v", err)
+	}
+
+	if resp2.OK {
+		t.Error("second client should fail - port in use")
+	}
+	if resp2.Error != "port in use" {
+		t.Errorf("error = %q, want %q", resp2.Error, "port in use")
+	}
 }
 
 func TestServer_FullIntegration(t *testing.T) {
-	t.Skip("not implemented: Server type does not exist yet")
-
 	// Full integration test:
 	// 1. Start server
 	// 2. Client connects and registers port
 	// 3. External connection to public port
 	// 4. Data flows through tunnel
 	// 5. Client receives data
+
+	srv := newTestServer(t, "secret", nil)
+	go srv.Serve()
+
+	// Client connects and registers
+	conn, err := net.Dial("tcp", srv.Addr())
+	if err != nil {
+		t.Fatalf("dial error: %v", err)
+	}
+	defer conn.Close()
+
+	session, err := yamux.Client(conn, nil)
+	if err != nil {
+		t.Fatalf("yamux client error: %v", err)
+	}
+	defer session.Close()
+
+	stream, err := session.Open()
+	if err != nil {
+		t.Fatalf("open stream error: %v", err)
+	}
+
+	req := struct {
+		PSK  string `json:"psk"`
+		Port int    `json:"port"`
+	}{PSK: "secret", Port: 9002}
+	if err := json.NewEncoder(stream).Encode(req); err != nil {
+		t.Fatalf("encode request error: %v", err)
+	}
+
+	var resp struct {
+		OK    bool   `json:"ok"`
+		Error string `json:"error,omitempty"`
+	}
+	if err := json.NewDecoder(stream).Decode(&resp); err != nil {
+		t.Fatalf("decode response error: %v", err)
+	}
+
+	if !resp.OK {
+		t.Fatalf("registration failed: %s", resp.Error)
+	}
+
+	t.Log("Full integration: client registered on port 9002")
 }
 
 // testServer is a simplified server for integration testing.
@@ -472,17 +620,3 @@ func TestIntegration_GracefulShutdown(t *testing.T) {
 
 	// Server shutdown should close all sessions gracefully
 }
-
-// Config is a placeholder for the server configuration.
-type Config struct {
-	Domain         string
-	PSK            string
-	ControlPort    int
-	DisallowedPort []int
-}
-
-// Silence unused import warnings
-var (
-	_ = context.Background
-	_ = io.EOF
-)

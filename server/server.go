@@ -126,6 +126,18 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 	}
 }
 
+// validateRequest validates the registration request PSK and port.
+// Returns an error message if validation fails, or empty string if valid.
+func (s *Server) validateRequest(req *aquitar.RegisterRequest) string {
+	if req.PSK != s.config.PSK {
+		return "invalid psk"
+	}
+	if s.disallowedPorts[req.Port] {
+		return "port disallowed"
+	}
+	return ""
+}
+
 // handleConn handles a new client connection.
 func (s *Server) handleConn(conn net.Conn) {
 	// Set up yamux server session
@@ -153,17 +165,9 @@ func (s *Server) handleConn(conn net.Conn) {
 		return
 	}
 
-	// Validate PSK
-	if req.PSK != s.config.PSK {
-		s.sendError(ctrl, "invalid psk")
-		ctrl.Close()
-		session.Close()
-		return
-	}
-
-	// Check disallowed ports
-	if s.disallowedPorts[req.Port] {
-		s.sendError(ctrl, "port disallowed")
+	// Validate PSK and port
+	if errMsg := s.validateRequest(&req); errMsg != "" {
+		s.sendError(ctrl, errMsg)
 		ctrl.Close()
 		session.Close()
 		return
@@ -237,7 +241,9 @@ func (s *Server) proxySession(sess *Session) {
 // sendError sends an error response on the control stream.
 func (s *Server) sendError(ctrl net.Conn, msg string) {
 	resp := aquitar.RegisterResponse{OK: false, Error: msg}
-	json.NewEncoder(ctrl).Encode(resp)
+	if err := json.NewEncoder(ctrl).Encode(resp); err != nil {
+		log.Printf("failed to send error response: %v", err)
+	}
 }
 
 // removeSession removes a session from the active sessions map.
